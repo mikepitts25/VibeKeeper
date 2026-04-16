@@ -156,7 +156,7 @@
     return STATUSES.includes(v) ? v : null;
   };
   const normalizePlatform = (p) => {
-    if (!p) return null;
+    if (!p) return 'unknown';
     const v = String(p).toLowerCase().trim();
     return PLATFORMS.includes(v) ? v : 'other';
   };
@@ -372,9 +372,8 @@
     renderActiveFilterNote();
     // Summary always reflects all merged projects, not filtered
     renderSummary(state.projects);
-    $$('.tile').forEach((tile) => {
-      tile.classList.toggle('is-active', tile.dataset.status === state.filters.status);
-    });
+    // Clear any stale error banner from a previous render
+    $('#error-state').hidden = true;
   };
 
   // ---- Wiring ----
