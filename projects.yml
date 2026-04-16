@@ -39,3 +39,8 @@ projects:
     vibe: IT lingo familiarization
     featured: true
     pin: true
+ 
+  GravityFlip:
+    status: wip              # idea | wip | shipped | paused | archived
+    platform: other   # couldn't auto-detect — fill in manually
+    vibe: mobile game
