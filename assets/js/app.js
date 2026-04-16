@@ -6,7 +6,7 @@
   const CACHE_KEY = 'vibekeeper.repos.v1';
   const CACHE_TTL_MS = 10 * 60 * 1000;
   const DEFAULT_RECENT_MONTHS = 6;
-  const PLATFORMS = ['web', 'mobile', 'cli', 'library', 'api', 'desktop', 'game', 'data', 'other'];
+  const PLATFORMS = ['web', 'ios', 'android', 'mobile', 'cli', 'library', 'api', 'desktop', 'game', 'data', 'other'];
   const STATUSES = ['idea', 'wip', 'shipped', 'paused', 'archived', 'unclassified'];
 
   const state = {
@@ -156,9 +156,27 @@
     return STATUSES.includes(v) ? v : null;
   };
   const normalizePlatform = (p) => {
-    if (!p) return 'unknown';
+    if (!p) return null;
     const v = String(p).toLowerCase().trim();
     return PLATFORMS.includes(v) ? v : 'other';
+  };
+
+  // Returns an array of valid platform strings, or ['unknown'] if none.
+  // Accepts meta.platforms (array or comma/space-separated string) and legacy
+  // meta.platform (also scalar or comma-separated).
+  const splitPlatformString = (s) => String(s).split(/[,\s/|]+/).map((x) => x.trim()).filter(Boolean);
+  const normalizePlatforms = (meta) => {
+    const raw = [];
+    if (Array.isArray(meta?.platforms)) raw.push(...meta.platforms);
+    else if (meta?.platforms) raw.push(...splitPlatformString(meta.platforms));
+    if (meta?.platform) raw.push(...splitPlatformString(meta.platform));
+    const cleaned = [];
+    const seen = new Set();
+    for (const p of raw) {
+      const v = normalizePlatform(p);
+      if (v && !seen.has(v)) { seen.add(v); cleaned.push(v); }
+    }
+    return cleaned.length ? cleaned : ['unknown'];
   };
 
   const mergeProjects = (repos, config) => {
@@ -196,7 +214,7 @@
         archived: !!repo.archived,
         fork: !!repo.fork,
         status,
-        platform: normalizePlatform(meta.platform),
+        platforms: normalizePlatforms(meta),
         vibe: meta.vibe || '',
         live_url: sanitizeUrl(meta.live_url) || sanitizeUrl(repo.homepage),
         featured: meta.featured === true,
@@ -238,7 +256,9 @@
 
   const renderPlatformBars = (projects) => {
     const counts = new Map();
-    for (const p of projects) counts.set(p.platform, (counts.get(p.platform) || 0) + 1);
+    for (const p of projects) {
+      for (const plat of p.platforms) counts.set(plat, (counts.get(plat) || 0) + 1);
+    }
     const entries = PLATFORMS
       .map((name) => [name, counts.get(name) || 0])
       .filter(([, c]) => c > 0)
@@ -256,7 +276,8 @@
   };
 
   const populatePlatformFilter = (projects) => {
-    const used = new Set(projects.map((p) => p.platform));
+    const used = new Set();
+    for (const p of projects) for (const plat of p.platforms) used.add(plat);
     const sel = $('#platform-filter');
     const current = sel.value || 'all';
     const options = ['<option value="all">All platforms</option>'];
@@ -274,7 +295,7 @@
     const q = search.trim().toLowerCase();
     return projects.filter((p) => {
       if (status !== 'all' && p.status !== status) return false;
-      if (platform !== 'all' && p.platform !== platform) return false;
+      if (platform !== 'all' && !p.platforms.includes(platform)) return false;
       if (q) {
         const hay = `${p.name} ${p.description} ${p.vibe}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -297,6 +318,8 @@
     grid.innerHTML = projects.map(cardHTML).join('');
   };
 
+  const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+
   const cardHTML = (p) => {
     const classes = ['card'];
     if (p.featured) classes.push('is-featured');
@@ -305,15 +328,22 @@
 
     const line = lineForProject(p.name);
     const editHref = editYamlUrl(state.repoSlug, line);
-    const statusLabel = p.status.charAt(0).toUpperCase() + p.status.slice(1);
-    const platformLabel = p.platform.charAt(0).toUpperCase() + p.platform.slice(1);
+    const statusLabel = cap(p.status);
+
+    const platformBadges = p.platforms
+      .map((plat) => `<span class="badge badge-platform platform-${escapeHTML(plat)}">${escapeHTML(cap(plat))}</span>`)
+      .join('');
 
     const links = [];
     if (p.html_url) links.push(`<a href="${escapeHTML(p.html_url)}" target="_blank" rel="noopener">GitHub ↗</a>`);
     if (p.live_url) links.push(`<a href="${escapeHTML(p.live_url)}" target="_blank" rel="noopener">Live ↗</a>`);
 
     const unclassifiedCta = p.status === 'unclassified'
-      ? `<a class="tag-cta" href="${escapeHTML(editHref)}" target="_blank" rel="noopener">＋ Tag this project</a>`
+      ? `<div class="unclass-actions">
+           <button class="btn btn-ghost btn-sm suggest-btn" type="button" data-repo="${escapeHTML(p.name)}">✨ Suggest</button>
+           <a class="tag-cta" href="${escapeHTML(editHref)}" target="_blank" rel="noopener">＋ Tag manually</a>
+         </div>
+         <div class="suggest-panel" data-panel="${escapeHTML(p.name)}" hidden></div>`
       : '';
 
     const vibe = p.vibe ? `<p class="card-vibe">${escapeHTML(p.vibe)}</p>` : '';
@@ -332,7 +362,7 @@
         </div>
         <div class="badges">
           <span class="badge badge-status status-${escapeHTML(p.status)}">${escapeHTML(statusLabel)}</span>
-          <span class="badge badge-platform">${escapeHTML(platformLabel)}</span>
+          ${platformBadges}
         </div>
         ${desc}
         ${vibe}
@@ -376,6 +406,175 @@
     $('#error-state').hidden = true;
   };
 
+  // ---- Platform detection (client-side, on demand) ----
+
+  const detectPlatforms = async (owner, repo) => {
+    const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+    if (!res.ok) {
+      if (res.status === 403) throw new Error('Rate limited by GitHub. Try again in a few minutes.');
+      if (res.status === 404) throw new Error('Repo is empty or not accessible.');
+      throw new Error(`GitHub API error: HTTP ${res.status}`);
+    }
+    const items = await res.json();
+    if (!Array.isArray(items)) throw new Error('Unexpected response from GitHub.');
+
+    const files = new Set();
+    const dirs = new Set();
+    for (const it of items) {
+      if (it.type === 'file') files.add(it.name.toLowerCase());
+      else if (it.type === 'dir') dirs.add(it.name.toLowerCase());
+    }
+    const hasFile = (...names) => names.some((n) => files.has(n.toLowerCase()));
+    const hasDir = (...names) => names.some((n) => dirs.has(n.toLowerCase()));
+    const matchesFile = (re) => [...files].some((n) => re.test(n));
+    const matchesDir = (re) => [...dirs].some((n) => re.test(n));
+
+    const platforms = new Set();
+    const signals = [];
+
+    // iOS
+    if (matchesDir(/\.xcodeproj$/)) { platforms.add('ios'); signals.push('.xcodeproj'); }
+    if (matchesDir(/\.xcworkspace$/)) { platforms.add('ios'); signals.push('.xcworkspace'); }
+    if (hasFile('podfile')) { platforms.add('ios'); signals.push('Podfile'); }
+
+    // Android
+    if (hasFile('androidmanifest.xml')) { platforms.add('android'); signals.push('AndroidManifest.xml'); }
+    if (hasFile('build.gradle', 'build.gradle.kts') && (hasFile('gradlew') || hasDir('app'))) {
+      platforms.add('android'); signals.push('build.gradle + gradlew/app/');
+    }
+
+    // Flutter → both
+    if (hasFile('pubspec.yaml')) {
+      platforms.add('ios'); platforms.add('android'); signals.push('pubspec.yaml (Flutter)');
+    }
+
+    // Game engines
+    if (hasFile('project.godot')) { platforms.add('game'); signals.push('project.godot'); }
+    if (hasDir('assets') && hasDir('projectsettings')) { platforms.add('game'); signals.push('Unity layout'); }
+    if (hasFile('main.lua') && hasFile('conf.lua')) { platforms.add('game'); signals.push('LÖVE2D'); }
+
+    // Rust
+    if (hasFile('cargo.toml')) {
+      if (hasDir('src-tauri')) { platforms.add('desktop'); signals.push('Tauri'); }
+      else { platforms.add('library'); signals.push('Cargo.toml'); }
+    }
+
+    // Go
+    if (hasFile('go.mod')) { platforms.add('cli'); signals.push('go.mod'); }
+
+    // Node / Web
+    if (hasFile('package.json')) {
+      if (matchesFile(/^(next|vite|nuxt|astro|svelte|vue|remix|gatsby-config)\.config\.(js|ts|mjs|cjs)$/)) {
+        platforms.add('web'); signals.push('JS web framework config');
+      } else if (hasFile('electron.js') || hasDir('electron')) {
+        platforms.add('desktop'); signals.push('Electron');
+      } else {
+        platforms.add('web'); signals.push('package.json');
+      }
+    }
+
+    // Jekyll / plain web
+    if (hasFile('_config.yml')) { platforms.add('web'); signals.push('_config.yml (Jekyll)'); }
+    if (hasFile('index.html') && !platforms.has('web')) { platforms.add('web'); signals.push('index.html'); }
+
+    // Python
+    if (hasFile('setup.py') || hasFile('pyproject.toml')) {
+      platforms.add('library'); signals.push('Python packaging');
+    }
+
+    // Data / notebooks
+    if (matchesFile(/\.ipynb$/)) { platforms.add('data'); signals.push('Jupyter notebook'); }
+
+    // Dockerfile → API (only if nothing else caught)
+    if (hasFile('dockerfile') && platforms.size === 0) {
+      platforms.add('api'); signals.push('Dockerfile');
+    }
+
+    return { platforms: [...platforms], signals };
+  };
+
+  const yamlQuote = (s) => {
+    const str = String(s);
+    if (/^[\w\-./: ]+$/.test(str) && !/^\d/.test(str) && str.trim() === str) return str;
+    return `"${str.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  };
+
+  const yamlSnippetFor = (repoName, platforms) => {
+    const indent = '  ';
+    const lines = [`${indent}${repoName}:`];
+    lines.push(`${indent}${indent}status: wip              # idea | wip | shipped | paused | archived`);
+    if (platforms.length === 1) {
+      lines.push(`${indent}${indent}platform: ${platforms[0]}`);
+    } else if (platforms.length > 1) {
+      lines.push(`${indent}${indent}platforms:`);
+      for (const p of platforms) lines.push(`${indent}${indent}  - ${p}`);
+    } else {
+      lines.push(`${indent}${indent}# platform: other   # couldn't auto-detect — fill in manually`);
+    }
+    return lines.join('\n') + '\n';
+  };
+
+  const handleSuggestClick = async (btn) => {
+    const repoName = btn.getAttribute('data-repo');
+    const panel = document.querySelector(`.suggest-panel[data-panel="${CSS.escape(repoName)}"]`);
+    if (!panel) return;
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = '…detecting';
+    panel.hidden = false;
+    panel.innerHTML = `<p class="suggest-status">Looking at files in <code>${escapeHTML(repoName)}</code>…</p>`;
+
+    try {
+      const [owner] = state.repoSlug.split('/');
+      const { platforms, signals } = await detectPlatforms(owner, repoName);
+      const yamlText = yamlSnippetFor(repoName, platforms);
+      const line = lineForProject(repoName) || null;
+      const editHref = editYamlUrl(state.repoSlug, line);
+
+      const detectedBadges = platforms.length
+        ? platforms.map((pl) => `<span class="badge badge-platform">${escapeHTML(cap(pl))}</span>`).join('')
+        : '<span class="badge">No platform match — tag manually</span>';
+
+      const signalList = signals.length
+        ? `<p class="suggest-signals">Signals: ${signals.map(escapeHTML).join(', ')}</p>`
+        : '';
+
+      panel.innerHTML = `
+        <div class="suggest-result">
+          <div class="badges">${detectedBadges}</div>
+          ${signalList}
+          <pre class="suggest-yaml">${escapeHTML(yamlText)}</pre>
+          <div class="suggest-actions">
+            <button class="btn btn-primary btn-sm suggest-copy" type="button">Copy YAML</button>
+            <a class="btn btn-ghost btn-sm" href="${escapeHTML(editHref)}" target="_blank" rel="noopener">Open editor ↗</a>
+            <button class="btn btn-ghost btn-sm suggest-dismiss" type="button">Dismiss</button>
+          </div>
+        </div>`;
+
+      const copyBtn = panel.querySelector('.suggest-copy');
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(yamlText);
+          copyBtn.textContent = 'Copied ✓';
+          setTimeout(() => { copyBtn.textContent = 'Copy YAML'; }, 1500);
+        } catch (_) {
+          copyBtn.textContent = 'Copy failed';
+        }
+      });
+      panel.querySelector('.suggest-dismiss').addEventListener('click', () => {
+        panel.hidden = true;
+        panel.innerHTML = '';
+      });
+    } catch (err) {
+      panel.innerHTML = `<p class="suggest-error">${escapeHTML(err.message || 'Detection failed.')}</p>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  };
+
   // ---- Wiring ----
 
   const attachHandlers = () => {
@@ -399,6 +598,11 @@
       $('#search').value = '';
       $('#platform-filter').value = 'all';
       applyAndRender();
+    });
+    // Event delegation for Suggest buttons (cards re-render so we can't bind per-card).
+    $('#grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.suggest-btn');
+      if (btn) handleSuggestClick(btn);
     });
   };
 

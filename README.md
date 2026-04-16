@@ -30,13 +30,36 @@ recent_months: 6           # auto-discovery window
 projects:
   VibeKeeper:              # case-insensitive match against the repo name
     status: wip            # idea | wip | shipped | paused | archived
-    platform: web          # web | mobile | cli | library | api | desktop | game | data | other
+    platforms: [web]       # list: web | ios | android | mobile | cli |
+                           #       library | api | desktop | game | data | other
     vibe: The tracker itself.
     live_url: https://mikepitts25.github.io/VibeKeeper/
     featured: true         # pin to top of the grid
     pin: true              # keep showing even if last push > recent_months
     # hidden: true         # drop from the dashboard (forks, noise)
+
+  # Multiple platforms — each renders a separate badge and is counted
+  # independently in the Platforms breakdown:
+  MyMobileApp:
+    status: wip
+    platforms:
+      - ios
+      - android
+    vibe: Flutter habit tracker
+
+  # platform: (singular) is also accepted for back-compat
+  old-project:
+    status: shipped
+    platform: web
 ```
+
+### Auto-detect platforms
+
+Every Unclassified card has a **✨ Suggest** button. Click it and the
+dashboard will fetch that repo's top-level files from the GitHub API,
+infer likely platforms (e.g. `*.xcodeproj` → iOS, `build.gradle` → Android,
+`pubspec.yaml` → iOS + Android via Flutter, `package.json` → web, etc.),
+and give you a ready-to-paste YAML snippet with a one-click copy button.
 
 ### Rules
 

@@ -6,7 +6,10 @@
 #
 # Schema (all fields optional unless noted):
 #   status:    idea | wip | shipped | paused | archived
-#   platform:  web | mobile | cli | library | api | desktop | game | data | other
+#   platforms: list, e.g. [ios, android]  (web | ios | android | mobile | cli
+#              | library | api | desktop | game | data | other)
+#   platform:  legacy single-string alias for platforms. Comma-separated
+#              strings are also accepted, e.g. "ios, android".
 #   vibe:      short note about what this project is / why it exists
 #   live_url:  deployed URL if applicable
 #   featured:  true -> pinned to top of the grid
@@ -24,15 +27,15 @@ recent_months: 6
 projects:
   VibeKeeper:
     status: wip
-    platform: web
+    platforms: [web]
     vibe: The tracker itself. Meta.
     live_url: https://mikepitts25.github.io/VibeKeeper/
     featured: true
     pin: true
+
   FluentIT:
     status: wip
-    platform: ios, android
+    platforms: [ios, android]
     vibe: IT lingo familiarization
-    live_url: 
     featured: true
     pin: true

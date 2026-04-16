@@ -342,9 +342,51 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  align-self: flex-start;
   font-size: 12px;
   color: var(--accent);
+}
+
+/* Suggest (platform auto-detect) */
+.unclass-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.suggest-panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.suggest-status,
+.suggest-signals,
+.suggest-error {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.suggest-error { color: #f87171; }
+.suggest-yaml {
+  margin: 0;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  white-space: pre;
+  overflow-x: auto;
+}
+.suggest-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 /* Empty / error / loading */
