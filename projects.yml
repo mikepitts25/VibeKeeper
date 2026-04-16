@@ -29,3 +29,10 @@ projects:
     live_url: https://mikepitts25.github.io/VibeKeeper/
     featured: true
     pin: true
+  FluentIT:
+    status: wip
+    platform: ios, android
+    vibe: IT lingo familiarization
+    live_url: 
+    featured: true
+    pin: true
