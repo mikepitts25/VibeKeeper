@@ -1,0 +1,31 @@
+# VibeKeeper — project metadata
+# ---------------------------------------------------------------------------
+# Edit this file to classify your vibe projects. GitHub fields (description,
+# stars, last-push, archived flag, etc.) are fetched live; this file only
+# stores the stuff GitHub doesn't know about.
+#
+# Schema (all fields optional unless noted):
+#   status:    idea | wip | shipped | paused | archived
+#   platform:  web | mobile | cli | library | api | desktop | game | data | other
+#   vibe:      short note about what this project is / why it exists
+#   live_url:  deployed URL if applicable
+#   featured:  true -> pinned to top of the grid
+#   pin:       true -> keep showing even if last push > recent_months window
+#   hidden:    true -> drop from the dashboard entirely (forks, noise, etc.)
+#
+# Project keys are matched case-insensitively against GitHub repo names.
+# ---------------------------------------------------------------------------
+
+username: mikepitts25
+
+# Auto-discovery window: repos pushed within this many months appear by default.
+recent_months: 6
+
+projects:
+  VibeKeeper:
+    status: wip
+    platform: web
+    vibe: The tracker itself. Meta.
+    live_url: https://mikepitts25.github.io/VibeKeeper/
+    featured: true
+    pin: true

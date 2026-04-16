@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VibeKeeper</title>
+  <meta name="description" content="A personal dashboard for tracking vibe projects." />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js" defer></script>
+  <script src="assets/js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✨</span>
+      <h1>VibeKeeper</h1>
+      <span class="tagline">personal project tracker</span>
+    </div>
+    <nav class="header-actions">
+      <a id="edit-yaml" class="btn btn-primary" href="#" target="_blank" rel="noopener">
+        <span aria-hidden="true">✎</span> Edit projects.yml
+      </a>
+      <a id="repo-link" class="btn btn-ghost" href="#" target="_blank" rel="noopener">
+        <span aria-hidden="true">⭘</span> Repo
+      </a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="summary" aria-label="Project counts by status">
+      <button class="tile" data-status="all"><span class="tile-count" data-count="total">—</span><span class="tile-label">Total</span></button>
+      <button class="tile tile-idea" data-status="idea"><span class="tile-count" data-count="idea">—</span><span class="tile-label">Idea</span></button>
+      <button class="tile tile-wip" data-status="wip"><span class="tile-count" data-count="wip">—</span><span class="tile-label">WIP</span></button>
+      <button class="tile tile-shipped" data-status="shipped"><span class="tile-count" data-count="shipped">—</span><span class="tile-label">Shipped</span></button>
+      <button class="tile tile-paused" data-status="paused"><span class="tile-count" data-count="paused">—</span><span class="tile-label">Paused</span></button>
+      <button class="tile tile-archived" data-status="archived"><span class="tile-count" data-count="archived">—</span><span class="tile-label">Archived</span></button>
+      <button class="tile tile-unclassified" data-status="unclassified"><span class="tile-count" data-count="unclassified">—</span><span class="tile-label">Unclassified</span></button>
+    </section>
+
+    <section class="platforms" aria-label="Platform breakdown">
+      <h2>Platforms</h2>
+      <ul id="platform-bars" class="platform-bars"></ul>
+    </section>
+
+    <section class="controls" aria-label="Filter and search">
+      <div class="filter-row">
+        <label class="search">
+          <span class="sr-only">Search projects</span>
+          <input id="search" type="search" placeholder="Search name, description, vibe…" autocomplete="off" />
+        </label>
+        <label class="select">
+          <span class="sr-only">Filter by platform</span>
+          <select id="platform-filter">
+            <option value="all">All platforms</option>
+          </select>
+        </label>
+        <button id="clear-filters" class="btn btn-ghost btn-sm" type="button">Clear</button>
+      </div>
+      <p id="active-filter-note" class="active-filter-note" hidden></p>
+    </section>
+
+    <section class="grid-section" aria-label="Projects">
+      <div id="grid" class="grid" aria-live="polite"></div>
+      <p id="empty-state" class="empty-state" hidden>No projects match the current filters.</p>
+      <p id="error-state" class="error-state" hidden></p>
+      <p id="loading-state" class="loading-state">Loading repos from GitHub…</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span id="cache-note"></span>
+    <span>Built with vibes · <a href="https://pages.github.com/" target="_blank" rel="noopener">GitHub Pages</a></span>
+  </footer>
+</body>
+</html>
