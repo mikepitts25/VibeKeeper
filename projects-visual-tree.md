@@ -5,10 +5,12 @@
 ```mermaid
 mindmap
   root((Mike Pitts<br/>Portfolio))
-    🟢 Ship Now
+    🟢 Testing — Ship First
+      🧳 Travel
+        TravelTipCalc
+    🟡 Almost Ready
       🧳 Travel
         DestinationPacker
-        TravelTipCalc
       🎓 Education
         Colombian-Spanish
       💻 Tech
@@ -19,7 +21,7 @@ mindmap
         SpiceSync
       💰 Business
         AImoney
-    🟡 In Progress
+    🔵 In Progress
       🔒 Cybersecurity
         PenTestCollab
     🔴 Decide or Kill
@@ -37,8 +39,12 @@ mindmap
 
 ```mermaid
 flowchart TD
-    subgraph ALMOST["🟢 ALMOST READY — Ship These First"]
-        DP[DestinationPacker<br/>🧳 Travel packing app]
+    subgraph TESTING["🟢 TESTING — SHIP THESE FIRST"]
+        TTC[TravelTipCalc<br/>🧳 TestFlight — Closest to $]
+    end
+
+    subgraph ALMOST["🟡 ALMOST READY — Final Polish"]
+        DP[DestinationPacker<br/>🧳 Travel packing]
         CS[Colombian-Spanish<br/>🎓 Language learning]
         FI[FluentIT<br/>💻 IT/Tech app]
         QC[QuickConvert<br/>🛠️ Utility converter]
@@ -46,8 +52,7 @@ flowchart TD
         AM[AImoney<br/>💰 AI business concept]
     end
 
-    subgraph TEST["🟡 TESTING / EARLY"]
-        TTC[TravelTipCalc<br/>🧳 TestFlight]
+    subgraph PROGRESS["🔵 IN PROGRESS — Early Dev"]
         PTC[PenTestCollab<br/>🔒 Just started]
     end
 
@@ -62,15 +67,17 @@ flowchart TD
         SA[SkillShareApp<br/>👥 Social]
     end
 
-    ALMOST --> REVENUE["💵 Revenue Stream"]
-    TEST --> REVENUE
+    TESTING --> REVENUE["💵 Revenue Stream"]
+    ALMOST --> REVENUE
+    PROGRESS --> REVENUE
     STALLED --> DECIDE{"❓ Keep or Kill?"}
     DECIDE -- Keep --> BACKLOG["📋 Backlog"]
     DECIDE -- Kill --> ARCHIVE["🗄️ Archive"]
     DEAD --> ARCHIVE
 
+    style TESTING fill:#32CD32,stroke:#006400,stroke-width:3px
     style ALMOST fill:#90EE90,stroke:#228B22,stroke-width:2px
-    style TEST fill:#FFD700,stroke:#DAA520,stroke-width:2px
+    style PROGRESS fill:#87CEEB,stroke:#4169E1,stroke-width:2px
     style STALLED fill:#FF6B6B,stroke:#DC143C,stroke-width:2px
     style DEAD fill:#808080,stroke:#404040,stroke-width:2px
     style REVENUE fill:#98FB98,stroke:#228B22,stroke-width:2px
@@ -81,6 +88,9 @@ flowchart TD
 ```mermaid
 timeline
     title 🚀 Suggested Launch Sequence
+    section NOW
+        This Week : TravelTipCalc
+                  : Submit to App Store
     section Q2 2026
         Week 1-2 : DestinationPacker
                  : Colombian-Spanish
@@ -89,8 +99,7 @@ timeline
                  : SpiceSync
                  : AImoney landing page
     section Q3 2026
-        July : TravelTipCalc v1.0
-             : PenTestCollab MVP
+        July : PenTestCollab MVP
         August : Decide on MindFlow
                : Decide on GravityFlip
                : Decide on StackHeist
@@ -127,8 +136,8 @@ flowchart LR
     end
 
     subgraph TRAVEL["🧳 Travel Apps"]
-        DP2[DestinationPacker]
         TTC2[TravelTipCalc]
+        DP2[DestinationPacker]
     end
 
     subgraph EDU["🎓 Education"]
@@ -141,10 +150,10 @@ flowchart LR
         SS2[SpiceSync]
     end
 
-    UI --> DP2 & TTC2 & CS2 & FI2 & QC2 & SS2
-    API --> DP2 & TTC2
-    AUTH --> DP2 & TTC2 & CS2
-    PAY --> DP2 & TTC2 & AM2[AImoney]
+    UI --> TTC2 & DP2 & CS2 & FI2 & QC2 & SS2
+    API --> TTC2 & DP2
+    AUTH --> TTC2 & DP2 & CS2
+    PAY --> TTC2 & DP2 & AM2[AImoney]
 
     style SHARED fill:#E6E6FA,stroke:#9370DB,stroke-width:2px
 ```
